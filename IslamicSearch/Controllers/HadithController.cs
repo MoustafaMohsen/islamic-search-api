@@ -22,70 +22,31 @@ namespace IslamicSearch.Controllers
             db = _db;
         }
 
-        //take book and Return volume number
-        public int muslimVol(int b) { return b<5?1:b<6?2:b<9?3:b<21?4:b<30?5:b<40?6:b<44?7:0;}
-
-        public int stringToInt(string str )
-        {
-            int x = 0;
-            for (System.Text.RegularExpressions.Match match = System.Text.RegularExpressions.Regex.Match(str, @"\d+"); match.Success; match = match.NextMatch())
-            {
-                x =  int.Parse(match.Value, System.Globalization.NumberFormatInfo.InvariantInfo); 
-            }
-
-            return x;
-        }
-
-
-        public HadithModel ConvertHadithObject(JHadithObject obj,string ketab)
-        {
-            var model = new HadithModel();
-            model.in_book_refrence = new Models.In_Book_Refrence();
-            model.old_refrence = new Models.Old_refrence();
-            model.arabicHTML = obj.arabicHTML;
-            model.arabicText = obj.arabicText;
-            model.englishHTML = obj.englishHTML;
-            model.englishText = obj.englishText;
-            model.id = obj.id;
-
-
-            model.number = stringToInt(obj.number);
-
-            model.in_book_refrence.book = stringToInt( obj.in_book_refrence.book ) ;
-            model.in_book_refrence.hadith = stringToInt(obj.in_book_refrence.hadith);
-
-            model.old_refrence.vol = ketab.ToLower()=="muslim"? muslimVol( stringToInt( obj.old_refrence.book ) ): stringToInt(obj.old_refrence.vol);
-            model.old_refrence.book = stringToInt( obj.old_refrence.book );
-            model.old_refrence.hadith = stringToInt( obj.old_refrence.hadith ) ;
-
-            return model;
-        }
-
-        private string  fileReader(string fileName)
-        {
-            using (StreamReader r = new StreamReader(fileName) )
-            {
-                 return r.ReadToEnd();
-            }
-        }
 
         // GET: api/<controller>
         [HttpGet]
         public List<HadithModel> Get()
         {
 
-            //Json to array 
-            var fileName = "1.json";
-            var fileString =  fileReader(fileName);
-            var hadithObj = JsonConvert.DeserializeObject<List<JHadithObject>>(fileString);
-
-            List<HadithModel> model= new List<HadithModel>();
-            for (int i = 0; i < hadithObj.Count; i++)
+            List<HadithModel> model = new List<HadithModel>();
+            int NumberOfFiles = 56;
+            string ketab = "muslim";
+            //Read Folder
+            for (int i = 0 ; i < NumberOfFiles + 1; i++)
             {
-                var row =ConvertHadithObject(hadithObj[i],"bukhari");
-                model.Add(row);
+                //Read File
+                var fileName = "Json/"+ ketab + "/"+ i +".json";
+                var fileString = JsonfileReader(fileName);
+                var hadithObj = JsonConvert.DeserializeObject<List<JMuslimHadithObject>>(fileString);
+
+                for (int i2 = 0; i2 < hadithObj.Count; i2++)
+                {
+                    var row = MuslimConvertHadithObject(hadithObj[i2]);
+                    model.Add(row);
+                }
             }
 
+            
 
             return model;
         }
@@ -114,6 +75,87 @@ namespace IslamicSearch.Controllers
         public void Delete(int id)
         {
         }
+
+        //take book and Return volume number
+        public int muslimVol(int b) { return b < 5 ? 1 : b < 6 ? 2 : b < 9 ? 3 : b < 21 ? 4 : b < 30 ? 5 : b < 40 ? 6 : b < 44 ? 7 : 0; }
+
+        public int stringToInt(string str)
+        {
+            int x = 0;
+            if (str == null)
+            {
+                return x;
+            }
+            for (System.Text.RegularExpressions.Match match = System.Text.RegularExpressions.Regex.Match(str, @"\d+"); match.Success; match = match.NextMatch())
+            {
+                x = int.Parse(match.Value, System.Globalization.NumberFormatInfo.InvariantInfo);
+            }
+
+            return x;
+        }
+
+        // To convert the Extracted from the browser to Model
+        public HadithModel otherConvertHadithObject(JHadithObject obj)
+        {
+            var model = new HadithModel();
+            model.in_book_refrence = new Models.In_Book_Refrence();
+            model.old_refrence = new Models.Old_refrence();
+            model.arabicHTML = obj.arabicHTML;
+            model.arabicText = obj.arabicText;
+            model.englishHTML = obj.englishHTML;
+            model.englishText = obj.englishText;
+            model.id = obj.id;
+
+
+            model.number = stringToInt(obj.number);
+
+            model.in_book_refrence.book = stringToInt(obj.in_book_refrence.book);
+            model.in_book_refrence.hadith = stringToInt(obj.in_book_refrence.hadith);
+
+            model.old_refrence.vol =   stringToInt(obj.old_refrence.vol);
+            model.old_refrence.book = stringToInt(obj.old_refrence.book);
+            model.old_refrence.hadith = stringToInt(obj.old_refrence.hadith);
+
+
+            return model;
+        }
+
+        public string JsonfileReader(string fileName)
+        {
+            using (StreamReader r = new StreamReader(fileName))
+            {
+                return r.ReadToEnd();
+            }
+        }
+
+        //Special converter for muslim ketab
+        // To convert the Extracted from the browser to Model
+        public HadithModel MuslimConvertHadithObject(JMuslimHadithObject obj)
+        {
+            var model = new HadithModel();
+            model.in_book_refrence = new Models.In_Book_Refrence();
+            model.old_refrence = new Models.Old_refrence();
+            model.arabicHTML = obj.arabicHTML;
+            model.arabicText = obj.arabicText;
+            model.englishHTML = obj.englishHTML;
+            model.englishText = obj.englishText;
+            model.id = obj.id;
+
+
+            model.number = stringToInt(""+obj.number);
+
+            model.in_book_refrence.book = obj.mini_new_refrence.book;
+            model.in_book_refrence.hadith = stringToInt(obj.mini_new_refrence.hadith);
+            model.in_book_refrence.tag = obj.in_book_refrence;
+
+            model.old_refrence.vol =  muslimVol(stringToInt(obj.old_refrence.book)) ;
+            model.old_refrence.book = stringToInt(obj.old_refrence.book);
+            model.old_refrence.hadith = stringToInt(obj.old_refrence.hadith);
+
+
+            return model;
+        }
+
     }//Class
 
     public class InBookRefrence
@@ -130,6 +172,7 @@ namespace IslamicSearch.Controllers
 
     }
 
+    //Extracted hadith Object Class
     public class JHadithObject
     {
         public int id { get; set; }
@@ -141,6 +184,26 @@ namespace IslamicSearch.Controllers
         public string englishText { get; set; }
         public string englishHTML { get; set; }
 
+    }
+
+    //Special case for muslim ketab
+
+    public class MiniNewRefrence
+    {
+        public int book { get; set; }
+        public string hadith { get; set; }
+    }
+    public class JMuslimHadithObject
+    {
+        public int id { get; set; }
+        public string number { get; set; }
+        public string in_book_refrence { get; set; }
+        public MiniNewRefrence mini_new_refrence { get; set; }
+        public OldRefrence old_refrence { get; set; }
+        public string arabicText { get; set; }
+        public string arabicHTML { get; set; }
+        public string englishText { get; set; }
+        public string englishHTML { get; set; }
     }
 }//Namespace
 

@@ -16,12 +16,13 @@ namespace IslamicSearch.Models
     {
         public int book { get; set; } = 0;
         public int hadith { get; set; } = 0;
+        public string tag { get; set; } = "";
     }
 
     public class HadithModel
     {
         public int id { get; set; }
-        public int number { get; set; }
+        public int number { get; set; } = 0;
         public string arabicHTML { get; set; }
         public string arabicText { get; set; }
         public string englishHTML { get; set; }
