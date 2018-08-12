@@ -10,7 +10,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-
+using Microsoft.EntityFrameworkCore;
+using IslamicSearch.Data;
 namespace IslamicSearch
 {
     public class Startup
@@ -25,6 +26,9 @@ namespace IslamicSearch
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            // Sqlite
+            services.AddDbContext<AppDbContext>(option=>option.UseSqlite( Configuration.GetConnectionString("SqliteConnection") ) );
+
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
         }
 
