@@ -15,5 +15,7 @@ namespace IslamicSearch.Data
         }
 
         public DbSet<HadithModel> HadithModel { get; set; }
+
+
     }
 }
