@@ -11,6 +11,10 @@ using Newtonsoft.Json;
 using Microsoft.EntityFrameworkCore;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Xml;
+using IslamicSearch.Models.Collections;
+using IslamicSearch.Models.Lib3;
+
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -20,441 +24,952 @@ namespace IslamicSearch.Controllers
     public class HadithController : Controller
     {
         private AppDbContext db;
-        public HadithController ( AppDbContext _db)
+        public HadithController(AppDbContext _db)
         {
             db = _db;
         }
 
-
         // GET: api/<controller>
-        [HttpGet]
-        public List<HadithModel> Get()
+        [HttpGet("")]
+        public async Task<ActionResult> Get()
         {
-
             /*
-            List<HadithModel> model = new List<HadithModel>();
-            int NumberOfFiles = 56;
-            string ketab = "muslim";
-            //Read Folder
-            for (int i = 0 ; i < NumberOfFiles + 1; i++)
-            {
-                //Read File
-                var fileName = "Json/"+ ketab + "/"+ i +".json";
-                var fileString = JsonfileReader(fileName);
-                var hadithObj = JsonConvert.DeserializeObject<List<JMuslimHadithObject>>(fileString);
-
-                for (int i2 = 0; i2 < hadithObj.Count; i2++)
+            var model =db.HadithBlocks.Select(
+                block => new HadithBlocks()
                 {
-                    var row = MuslimConvertHadithObject(hadithObj[i2]);
-                    model.Add(row);
+                    content = block.content,
+                    id = block.id,
+                    Refrences = block.Refrences,
+                    sources = block.sources,
+                    src = block.src
                 }
-            }
+                );
+            var test = await model.FirstOrDefaultAsync();
             */
-            List<HadithModel> model = new List<HadithModel>() {
-                new HadithModel() { id = 0, arabicText = "test hadith" }
-            };
-        
+            return Content("Welcome");
+        }
+
+        //Request Hadith by src and id
+        [HttpGet("id/{src}/{id}")]
+        public ActionResult<HadithBlocks> GetByidAndSrc(int id, int src)
+        {
+            var queryable = db.HadithBlocks.Select(
+                block => new HadithBlocks()
+                {
+                    content = block.content,
+                    id = block.id,
+                    Refrences = block.Refrences,
+                    sources = block.sources,
+                    src = block.src
+                }
+                );
+            var model = queryable.FirstOrDefault(b => b.id == id && b.src == src);
             return model;
         }
 
-        // GET api/<controller>/5
-        [HttpGet("up")]
-        public HadithModel UpdateDatabase()
+        //Request Hadith using Request Object
+        [HttpPost("requestb/")]
+        public async Task<ActionResult<HadithBlocks>> GetByRequest([FromBody] IncomingRequest request)
         {
-
-
-            //read muslim file to var
-            List<HadithModel> model = new List<HadithModel>();
-            int NumberOfFiles = 51;
-            string ketab = "nasai";
-            int boks;
-            int rowss;
-            //Read Folder
-            for (int i = 1; i < NumberOfFiles + 1; i++)
-            {
-                //Read File
-                var fileName = "Json/" + ketab + "/" + i + ".json";
-                var fileString = JsonfileReader(fileName);
-                //var hadithObj = JsonConvert.DeserializeObject<List<HadithModel>>(fileString);
-                var hadithObj = JsonConvert.DeserializeObject<List<NasaiHadithModel>>(fileString);
-                for (int i2 = 0; i2 < hadithObj.Count; i2++)
-                {
-                    var in_book_refr = new In_Book_Refrence()
+            var queryable = db.HadithBlocks.Select(
+                    block => new HadithBlocks()
                     {
-                        hadith = (int)hadithObj[i2].in_book_refrence.hadith,
-                        book = (int)hadithObj[i2].in_book_refrence.book,
-                        vol = (int)hadithObj[i2].in_book_refrence.vol,
-                        tag = hadithObj[i2].grade
-                    };
-
-                    var Old__refr = new Old_refrence()
-                    {
-                        hadith = !isNull(hadithObj[i2].old_refrence.hadith) ? (int)hadithObj[i2].old_refrence.hadith : -1,
-                        book = !isNull(hadithObj[i2].old_refrence.book) ? (int)hadithObj[i2].old_refrence.book : -1,
-                        vol = !isNull(hadithObj[i2].old_refrence.vol) ? (int)hadithObj[i2].old_refrence.vol : -1,
-
-                    };
-
-                    var nasai = new HadithModel()
-                    {
-                        id = hadithObj[i2].id,
-                        number = hadithObj[i2].number,
-                        arabicHTML = hadithObj[i2].arabicHTML,
-                        arabicText = hadithObj[i2].arabicText,
-                        englishHTML = hadithObj[i2].englishHTML,
-                        englishText = hadithObj[i2].englishText,
-                        old_refrence = Old__refr,
-                        in_book_refrence = in_book_refr,
-
-                    };
-
-                    var row = nasai;
-                    row.src = 3;
-                    model.Add(row);
-                    db.HadithModel.Add(row);
-
-                    rowss = i2;
-                }
-                boks = i;
-            }
-
-
-
-
-            db.SaveChanges();
-            return db.HadithModel.FirstOrDefault();
-
-            return null;
-        }
-        // GET api/<controller>/5
-        [HttpGet("tag")]
-        public List<tagindex> getTags()
-        {
-            var model = db.HadithModel.Select(a =>
-                     new HadithModel
-                     {
-                         src = a.src,
-                         id = a.id,
-                         arabicText = a.arabicText,
-                         arabicHTML = a.arabicHTML,
-                         englishText = a.englishText,
-                         englishHTML = a.englishHTML,
-                         number = a.number,
-                         in_book_refrence = a.in_book_refrence,
-                         old_refrence = a.old_refrence,
-                     }
-                ).ToList();
-
-            model = model.Where(m => m.src == 2).ToList();
-            List<tagindex> tagindex = new List<tagindex>() { };
-            foreach (var item in model)
-            {
-                if (!isNull(item.in_book_refrence))
-                {
-                    tagindex tag = new tagindex()
-                    {
-                        tag = item.in_book_refrence.tag
-                    };
-                    tagindex.Add(tag);
-                }
-            }
-            return tagindex;
-
-        }//gettag
-
-        // GET api/<controller>/5
-        [HttpGet("newb")]
-        public bukhariindex newb()
-        {
-            var model = db.HadithModel.Select(a =>
-                     new HadithModel
-                     {
-                         src = a.src,
-                         id = a.id,
-                         //arabicText = a.arabicText,
-                         //arabicHTML = a.arabicHTML,
-                         //englishText = a.englishText,
-                        // englishHTML = a.englishHTML,
-                        // number = a.number,
-                         in_book_refrence = a.in_book_refrence,
-                         old_refrence = a.old_refrence,
-                     }
-                ).ToList();
-
-            model = model.Where(
-                m => m.src == 2
-                ).ToList();
-            
-
-
-
-            //count each chapter in new
-            List<bnewIndex> newindx = new List<bnewIndex>() { };            
-            for (int i = 1; i < 100; i++)
-            {
-                if ( 
-                    isNullOr0( model.Where(m => m.in_book_refrence.book == i).Count() ) 
-                    )
-                {
-                    break;
-                }
-
-                var nhd = 0;
-                //get all hadiths in i chapter
-                var chaptermodel = model.Where(m => m.in_book_refrence.book == i).ToList();
-
-                //get biggest hadith number and save it to nhd
-                foreach (var hadith in chaptermodel)
-                {
-                    if (hadith.in_book_refrence.hadith >= nhd)
-                    {
-                        nhd = hadith.in_book_refrence.hadith;
+                        content = block.content,
+                        id = block.id,
+                        Refrences = block.Refrences,
+                        sources = block.sources,
+                        src = block.src,
+                        number = block.number
                     }
-                }
-
-                //add this chapter index to the list of newixdex
-                var bnew = new bnewIndex() { nc = i, nh = nhd };
-                newindx.Add(bnew);
-            }
-
-
-            //count in old refrence 
-            List<boldIndex> oldindx = new List<boldIndex>() { };
-            for (int i = 1; i < 100; i++)
-            {
-                if (isNullOr0( model.Where(m => m.old_refrence.book == i).Count() ) )
-                {
-                    break;
-                }
-
-                var ohd = 0;
-                //get all hadiths in i chapter
-                var chaptermodel = model.Where(m => m.old_refrence.book == i).ToList();
-
-                //get biggest hadith number and save it to nhd
-                foreach (var hadith in chaptermodel)
-                {
-                    if (hadith.old_refrence.hadith >= ohd)
-                    {
-                        ohd = hadith.old_refrence.hadith;
-                    }
-                }
-
-                //add this chapter index to the list of newixdex
-                var boldIndex = new boldIndex() { oc = i, oh = ohd };
-                oldindx.Add(boldIndex);
-            }
-
-            bukhariindex bindex = new bukhariindex() {bnew= newindx, bold= oldindx };
-            return bindex;
-
-        }//gettag
-
-        public bool IndexExsists(HadithModel hadithModel, List<bnewIndex> newindx)
-        {
-            bool nonexsist = false;
-            foreach (var item in newindx)
-            {
-                if (
-                    item.nc == hadithModel.in_book_refrence.book
-                    )
-                {
-                    nonexsist = true;
-                }
-            }
-            return nonexsist;
-        }
-        public bool IndexExsists(HadithModel hadithModel, List<boldIndex> oldindx)
-        {
-            bool nonexsist = false;
-            foreach (var item in oldindx)
-            {
-                if (
-                    item.oc == hadithModel.old_refrence.book
-                    )
-                {
-                    nonexsist = true;
-                }
-            }
-            return nonexsist;
-        }
-
-        // GET api/<controller>/5
-        [HttpGet("mod")]
-        public HadithModel modDatabase()
-        {
-            
-
-            var queryable = db.HadithModel.Select(a =>
-                     new HadithModel
-                     {
-                         src = a.src,
-                         id = a.id,
-                         arabicText = a.arabicText,
-                         arabicHTML = a.arabicHTML,
-                         englishText = a.englishText,
-                         englishHTML = a.englishHTML,
-                         number = a.number,
-                         in_book_refrence = a.in_book_refrence,
-                         old_refrence = a.old_refrence,
-                     }
                 );
 
-            foreach (var item in queryable)
-            {
-                if (item.src == 2)
-                {
-                    var newtag = cleanwhitespaces(item.in_book_refrence.tag);
-                    var editItem = db.HadithModel.FirstOrDefault(m => m.id == item.id);
-                    editItem.in_book_refrence.tag = newtag;
-                    db.Entry(editItem).State = EntityState.Modified;
+            var model = await SearchHadiths(queryable, request);
 
-                }
-            }
-
-
-
-
-            db.SaveChanges();
-            return db.HadithModel.FirstOrDefault();
-
-            return null;
-        }
-
-        public async void edittag(HadithModel item)
-        {
-
-        }
-
-        public string cleanwhitespaces(string srt)
-        {
-            return Regex.Replace(srt, @"\s+", "");
-        }
-        // GET api/<controller>/5
-        [HttpGet("{id}")]
-        public ActionResult<HadithModel> GetById(int id)
-        {
-            HadithModel hadith = null;
-            return hadith;
-        }
-
-
-        // POST api/<controller>
-        [HttpPost("request/{source}")]
-        public ActionResult<HadithModel> Post([FromBody] HadithRequest request,string source)
-        {
-            if (!ModelState.IsValid) { return BadRequest(ModelState); }
-
-            HadithModel hadith = null;
-
-            if (source == "hadith")
-            {
-                var queryable = db.HadithModel.Select(a =>
-                     new HadithModel
-                     {
-                         src = a.src,
-                         id = a.id,
-                         arabicText = a.arabicText,
-                         arabicHTML = a.arabicHTML,
-                         englishText = a.englishText,
-                         englishHTML = a.englishHTML,
-                         number = a.number,
-                         in_book_refrence = a.in_book_refrence,
-                         old_refrence = a.old_refrence,
-                     }
-                );
-                hadith = searchRequest(request,queryable);
-                //hadith = queryable.FirstOrDefault(m => m.src == request.src && m.number == request.number );
-                /*
-                hadith = queryable.FirstOrDefault(
-                m => m.src == request.src &&
-                m.in_book_refrence.book == request.in_book_refrence.book &&
-                m.in_book_refrence.hadith == request.in_book_refrence.hadith);
-                */
-            }
-
-
-            if (hadith == null)
-            {
+            if (isNull(model))
                 return NotFound();
+
+            return Ok(model);
+        }
+
+        [HttpPost("requestbs/")]
+        public ActionResult<HadithBlocks> GetManyByRequest([FromBody] IncomingRequest request)
+        {
+            var queryable = db.HadithBlocks.Select(
+                    block => new HadithBlocks()
+                    {
+                        content = block.content,
+                        id = block.id,
+                        Refrences = block.Refrences,
+                        sources = block.sources,
+                        src = block.src,
+                        number = block.number
+                    }
+                );
+            List<HadithBlocks> list = new List<HadithBlocks>();
+            if (request.Method == 5)
+            {
+
+                list = queryable.Where(
+                                b =>
+                                    b.src == request.src
+                                    &&
+                                    b.Refrences.Any(
+                                        refr =>
+                                            refr.Refrencetype == request.Refrencetype &&
+                                            refr.value4 == request.value4 //&&
+                                                                          //refr.tag1 == request.tag1
+                                        )
+                            )
+                            .OrderBy(o => o.number)
+                            .ToList()
+                ;
             }
 
-            return hadith;
+            if (isNullOr0(list) || isNullOr0(list.Count))
+                return NotFound();
+
+            return Ok(list);
         }
 
 
-
-
-        [HttpPost("test")]
-        public ActionResult<string> PostTEST([FromQuery]HadithRequest request)
+        //===================Using Json only================
+        [HttpGet("id/json/{src}/{id}")]
+        public ActionResult<HadithBlocks> GetByidAndSrcjson(int id, int src)
         {
-            return "sucess";
-        }
-        // PUT api/<controller>/5
-        [HttpPut("{id}")]
-        public void Put(int id, [FromBody]string value)
-        {
+            var Blocks = ReadJsonObject<List<HadithBlocks>>("Json/Hadiths/fulldb/bukhari_musli_fulldb.json");
+
+            var model = Blocks.FirstOrDefault(b => b.id == id && b.src == src);
+            return model;
         }
 
-        // DELETE api/<controller>/5
-        [HttpDelete("{id}")]
-        public void Delete(int id)
+        [HttpPost("requestbs/json/")]
+        public ActionResult<HadithBlocks> GetManyByRequestjson([FromBody] IncomingRequest request)
         {
+            var Blocks = ReadJsonObject<List<HadithBlocks>>("Json/Hadiths/fulldb/bukhari_musli_fulldb.json");
+
+            List<HadithBlocks> list = new List<HadithBlocks>();
+            if(request.Method == 5)
+            {
+
+            list = Blocks.Where(
+                            b =>
+                                b.src == request.src
+                                &&
+                                b.Refrences.Any(
+                                    refr =>
+                                        refr.Refrencetype == request.Refrencetype &&
+                                        refr.value4 == request.value4 //&&
+                                                                      //refr.tag1 == request.tag1
+                                    )
+                        )
+                        .OrderBy(o => o.number)
+                        .ToList()
+            ;
+            }
+
+            if (isNullOr0(list) ||isNullOr0(list.Count))
+                return NotFound();
+
+            return Ok(list);
         }
 
-        //take book and Return volume number
-        public int muslimVol(int b) { return b < 5 ? 1 : b < 6 ? 2 : b < 9 ? 3 : b < 21 ? 4 : b < 30 ? 5 : b < 40 ? 6 : b < 44 ? 7 : 0; }
-
-
-        public HadithModel searchRequest(HadithRequest request, IQueryable<HadithModel> queryable)
+        //Request Hadith using Request Object
+        [HttpPost("requestb/json/")]
+        public  ActionResult<HadithBlocks> GetByRequestjson([FromBody] IncomingRequest request)
         {
-            HadithModel hadith= new HadithModel { };
-            string number = !isNullOr0(request.number)? "number" : "";
-            string newCh = !isNullOr0(request.in_book_refrence.book) && !isNullOr0(request.in_book_refrence.hadith) ? "newCh" : "";
-            string newVol = !isNullOr0(request.in_book_refrence.book) && !isNullOr0(request.in_book_refrence.hadith) && !isNullOr0(request.in_book_refrence.vol) ? "newVol" : "";
-            string oldCh = !isNullOr0(request.old_refrence.book) && !isNullOr0(request.old_refrence.hadith) ? "oldCh" : "";
-            string oldVol = !isNullOr0(request.old_refrence.book) && !isNullOr0(request.old_refrence.hadith) && !isNullOr0(request.old_refrence.vol) ? "oldVol" : "";
-            string tag = !isNullOr0(request.in_book_refrence.tag) ? "tag" : "";
-            List<string> Selectors = new List<string> {
-                number,newCh,newVol,oldCh, oldVol, tag 
-            };
-            foreach (var selector in Selectors)
-            {   
-               var Break = false; 
-                switch (selector)
+            var Blocks = ReadJsonObject<List<HadithBlocks>>("Json/Hadiths/fulldb/bukhari_musli_fulldb.json");
+
+
+            var model = SearchHadithsList(Blocks, request);
+
+            if (isNull(model))
+                return NotFound();
+
+            return Ok(model);
+        }
+
+
+        //=================Preparing Methods===================//
+        /*
+        //download Sorted Hadiths
+        [HttpGet("Sorted/{src}")]
+        public ActionResult SortHadith(int src)
+        {
+            var queryable = db.HadithBlocks.Select(
+                block => new HadithBlocks()
                 {
-                    case "number":
-                        { hadith = queryable.FirstOrDefault(m => m.number == request.number && m.src == request.src); Break = true; }
-                        break;
-                    case "newCh":
-                        { hadith = queryable.FirstOrDefault(m => m.src == request.src && m.in_book_refrence.book == request.in_book_refrence.book && m.in_book_refrence.hadith == request.in_book_refrence.hadith); Break = true; }
-                        break;
-                    case "newVol":
-                        { hadith = queryable.FirstOrDefault(m => m.src == request.src && m.in_book_refrence.vol == request.in_book_refrence.vol && m.in_book_refrence.book == request.in_book_refrence.book && m.in_book_refrence.hadith == request.in_book_refrence.hadith); Break = true; }
-                        break;
-                    case "oldCh":
-                        { hadith = queryable.FirstOrDefault(m => m.src == request.src && m.old_refrence.book == request.old_refrence.book && m.old_refrence.hadith == request.old_refrence.hadith); Break = true; }
-                        break;
-                    case "oldVol":
-                        { hadith = queryable.FirstOrDefault(m => m.src == request.src && m.old_refrence.vol == request.old_refrence.vol && m.old_refrence.book == request.old_refrence.book && m.old_refrence.hadith == request.old_refrence.hadith); Break = true; }
-                        break;
-                    case "tag":
+                    content = block.content,
+                    id = block.id,
+                    Refrences = block.Refrences,// = block.Refrences,
+                    sources = block.sources,
+                    src = block.src
+                }
+                );
+            var models = queryable.Where(
+                            b =>
+                                b.src == src
+                                &&
+                                b.Refrences.Any()
+                        ).ToList();
+            //new Refrence() {value1=r.value1 }
+            var name = "USC-MSA";
+            var ordered = models
+                .OrderBy(o => o.Refrences.First(r=> r.name== name).value1 )
+                .ThenBy(o => o.Refrences.First(r => r.name == name).value2)
+                .ThenBy(o => o.Refrences.First(r => r.name == name).value3)
+                ;
+            var list = ordered.ToList();
+            for (int i = 0; i < list.Count; i++)
+            {
+                if (i > 0)
+                {
+                    for (int i2 = 0; i2 < list[i].Refrences.Count; i2++)
+                    {
+                        var pastitem = list[i - 1];
+                        var item = list[i];
+                        var pastRedrence = list[i-1].Refrences.Where( r=> r.name == name).First();
+                        var refrence = list[i].Refrences.Where(r => r.name == name).First();//[i2];
+                       // if (refrence.name == name)
                         {
-                            hadith = queryable.Where(m => equaltag(m.in_book_refrence.tag,request.in_book_refrence.tag)).FirstOrDefault();
-                            Break = true; }
-                        break;
+                                if (pastRedrence.value3 == refrence.value3)
+                                    //if(pastRedrence.tag1 == refrence.tag1)
+                                        throw null;
+                        }
+                    }
+                }
+            }
 
+
+            return Ok(StringfyObject( ordered ));
+        }
+        */
+        //Backup Database
+        [HttpGet("DownloadDb")]
+        public async Task<ActionResult<HadithBlocks>> DownloadDb()
+        {
+            var queryable = db.HadithBlocks.Select(
+                    block => new HadithBlocks()
+                    {
+                        content = block.content,
+                        id = block.id,
+                        Refrences = block.Refrences,
+                        sources = block.sources,
+                        src = block.src,
+                        number = block.number
+                    }
+                );
+
+            var model = queryable
+                //.Where(x => x.Refrences.Any()).Where(x => x.content.Any()).Where( x => x.sources.Any() )
+                .ToList()
+                ;
+
+            if (isNull(model))
+                return NotFound();
+
+            return Ok(model);
+        }
+        [HttpGet("getadresses/{src}")]
+        public string GetAdress(int src)
+        {
+            var queryable = db.HadithBlocks.Select(
+                    block => new HadithBlocks()
+                    {
+                        content = block.content,
+                        id = block.id,
+                        Refrences = block.Refrences,
+                        sources = block.sources,
+                        src = block.src,
+                        number = block.number
+                    }
+                )
+                .Where(x => x.src == src)
+                ;
+
+            var name1 = "In-Book";
+            var name2 = "USC-MSA";
+            var model = queryable.SelectMany(x => x.Refrences).ToList();
+
+            var newChapters = model.Where(x => x.name== name1)
+                .OrderBy(o=>o.value1)
+                .ThenBy(o => o.value2)
+                .ToList()
+                ;
+
+
+            var oldChapters = model.Where(x => x.name == name2)
+                .OrderBy(o=>o.value1)
+                .ThenBy(o => o.value2)
+                //.ThenBy(o => o.value3)
+                .ToList()
+                ;
+
+            var newList = new List<(int, int)>();
+            for (int i = -3; i < 110 ; i++)
+            {
+                var chapterCollec = newChapters.Where(x => x.value1 == i).ToList();
+                if (chapterCollec.Any()  )
+                {
+                    var element = newChapters[i];
+                    var ( chapter , lastHaith ) = (i, chapterCollec.Last().value2);
+                    newList.Add((chapter, lastHaith));
+
+                }
+            }
+
+            var oldList = new List<(int, int, int)>();
+            for (int i = -3; i < 110; i++)
+            {
+                var chapterCollec = oldChapters.Where(x => x.value1 == i).ToList();
+                if (chapterCollec.Any())
+                {
+                    var element = newChapters[i];
+                    var (chapter, firstHadith, lastHaith) = (i, chapterCollec.First().value2, chapterCollec.Last().value2);
+                    oldList.Add((chapter, firstHadith, lastHaith));
+
+                }
+            }
+            
+            return StringfyObject(new { newList,oldList });
+        }
+
+        /*
+        //Upload to Database
+        //[HttpGet("newup/{filename}/")]
+        public List<HadithBlocks> ShowData(string filename)
+        {
+            var hadithObj = ReadJsonObject<HadithCollection>("Json/Hadiths/" + filename);
+            var hadiths = new List<Hadith>();
+            var BlockCollection = new List<HadithBlocks>();
+
+            for (int i = 0; i < hadithObj.hadiths.hadith.Count; i++)
+            {
+                var hadith = hadithObj.hadiths.hadith[i];
+
+                //Add To HadithBlock
+
+                var contentList = new List<Value>();
+                int countar = 1;
+                foreach (var item in hadith.arabic)
+                {
+                    var content = new Models.Lib3.Value
+                    {
+                        name = "ar:" + countar,
+                        value = item.astring
+                    };
+                    contentList.Add(content);
+                    countar++;
+                }
+
+                int counteng = 1;
+                foreach (var item in hadith.english)
+                {
+                    var content = new Models.Lib3.Value
+                    {
+                        name = "en:" + counteng,
+                        value = item.astring
+                    };
+                    contentList.Add(content);
+                    counteng++;
+                }
+
+                var Refrences = new List<Models.Lib3.Refrence>();
+                foreach (var Hadithrefrence in hadith.references)
+                {
+                    var refrence = new Models.Lib3.Refrence();
+
+                    //only if bukhari
+                    if (false)
+                        switch (Hadithrefrence.code)
+                        {
+                            case "DarusSalam":
+                                {
+                                    refrence.name = Hadithrefrence.code;
+                                    refrence.value1 = Int32.Parse(Hadithrefrence.parts[0].astring);
+                                    refrence.Refrencetype = "hadith";
+                                    break;
+                                }
+
+                            case "In-Book":
+                                {
+                                    refrence.name = Hadithrefrence.code;
+                                    refrence.value1 = Int32.Parse(Hadithrefrence.parts[0].astring);
+                                    refrence.value2 = Int32.Parse(Hadithrefrence.parts[1].astring);
+                                    refrence.Refrencetype = "book hadith";
+                                    break;
+                                }
+
+                            case "USC-MSA":
+                                {
+                                    refrence.name = Hadithrefrence.code;
+                                    refrence.value1 = Int32.Parse(Hadithrefrence.parts[0].astring);
+                                    refrence.value2 = Int32.Parse(Hadithrefrence.parts[1].astring);
+                                    refrence.value3 = Int32.Parse(Hadithrefrence.parts[2].astring);
+                                    refrence.Refrencetype = "vol book hadith";
+                                    break;
+                                }
+
+                            default:
+                                throw null;
+                                break;
+                        }
+
+                    //only if Muslim
+                    if (false)
+                        switch (Hadithrefrence.code)
+                        {
+                            case "In-Book":
+                                {
+                                    refrence.name = Hadithrefrence.code;
+                                    refrence.value1 = Int32.Parse(Hadithrefrence.parts[0].astring);
+                                    refrence.value2 = Int32.Parse(Hadithrefrence.parts[1].astring);
+                                    refrence.Refrencetype = "book hadith";
+                                    break;
+                                }
+
+                            case "Reference":
+                                {
+                                    refrence.name = Hadithrefrence.code;
+                                    refrence.value4 = Int32.Parse(Hadithrefrence.parts[0].astring);
+                                    refrence.tag1 = Hadithrefrence.suffix;
+                                    refrence.Refrencetype = "muslim tag";
+                                    break;
+                                }
+
+                            case "USC-MSA":
+                                {
+                                    refrence.name = Hadithrefrence.code;
+                                    refrence.value1 = Int32.Parse(Hadithrefrence.parts[0].astring);
+                                    refrence.value2 = Int32.Parse(Hadithrefrence.parts[1].astring);
+                                    refrence.Refrencetype = "book hadith";
+                                    break;
+                                }
+
+                            default:
+                                throw null;
+                                break;
+                        }
+
+                    //only if AbuDawud
+                    if (true)
+                        switch (Hadithrefrence.code)
+                        {
+                            case "DarusSalam":
+                                {
+                                    refrence.name = Hadithrefrence.code;
+                                    refrence.value1 = Int32.Parse(Hadithrefrence.parts[0].astring);
+                                    refrence.tag1 = Hadithrefrence.suffix;
+                                    refrence.Refrencetype = "hadith";
+                                    break;
+                                }
+
+                            case "Hasan":
+                                {
+                                    refrence.name = Hadithrefrence.code;
+                                    refrence.value1 = Int32.Parse(Hadithrefrence.parts[0].astring);
+                                    refrence.tag1 = Hadithrefrence.suffix;
+                                    refrence.Refrencetype = "hadith";
+                                    break;
+                                }
+
+                            case "USC-MSA":
+                                {
+                                    refrence.name = Hadithrefrence.code;
+                                    refrence.value1 = Int32.Parse(Hadithrefrence.parts[0].astring);
+                                    refrence.value2 = Int32.Parse(Hadithrefrence.parts[1].astring);
+                                    refrence.Refrencetype = "book hadith";
+                                    break;
+                                }
+
+                            default:
+                                throw null;
+                                break;
+                        }
+                    Refrences.Add(refrence);
+                }
+
+
+                var sources = new List<Models.Lib3.Value>();
+                int countSource = 1;
+                foreach (var item in hadith.verseReferences)
+                {
+                    if (item.chapter != "-1")
+                    {
+                        var source = new Models.Lib3.Value();
+                        source.name = "quran:" + countSource;
+                        source.value = "ch:" + item.chapter + ",firstverse:" + item.firstVerse + ",lastverse:" + item.lastVerse;
+                        sources.Add(source);
+                        countSource++;
+                    }
+                }
+
+
+
+                var block = new HadithBlocks()
+                {
+                    content = contentList,
+                    Refrences = Refrences,
+                    sources = sources,
+                    src = hadith.src
+
+                };
+
+                db.Add(block);
+            }
+
+
+            //db.SaveChanges();
+            return BlockCollection;
+        }
+        
+        
+        //Upload to Database
+        //[HttpGet("upblock/{filename}/")]
+        public ActionResult UploadToDb2(string filename)
+        {
+            var watch = System.Diagnostics.Stopwatch.StartNew();
+
+            var hadithBlocks = ReadJsonObject<List<HadithBlocks>>("Json/Hadiths/" + filename);
+            //check duplicates
+            var name = "In-Book";
+            var list = hadithBlocks
+                .OrderBy(o => o.Refrences.First(r => r.name == name).value1)
+                .ThenBy(o => o.Refrences.First(r => r.name == name).value2)
+                //.ThenBy(o => o.Refrences.First(r => r.name == name).value3)
+                .ThenBy(o => o.Refrences.First(r => r.Refrencetype == "muslim tag").tag1)
+                .ToList()
+                ;
+            for (int i = 0; i < list.Count; i++)
+            {
+                if (i > 0)
+                {
+                    for (int i2 = 0; i2 < list[i].Refrences.Count; i2++)
+                    {
+                        var pastitem = list[i - 1];
+                        var item = list[i];
+                        var pastRedrence = list[i - 1].Refrences.Where(r => r.name == name).First();
+                        var refrence = list[i].Refrences.Where(r => r.name == name).First();//[i2];
+                        if (refrence.value1 == refrence.value1)
+                        {
+                            if (pastRedrence.value2 == refrence.value2)
+                                if (pastRedrence.value3 == refrence.value3)
+                                {
+                                   // throw null;
+                                }
+                        }
+                        if (isNull(refrence))
+                            throw null;
+                    }
+                }
+            }
+            var dbBlocks = new List<HadithBlocks>();
+            for (int i = 0; i < list.Count; i++)
+            {
+                //muslim start from 92 for introduction hadiths
+                var number = i + 1 +92;
+                var block = list[i];
+                block.number = number;
+                dbBlocks.Add(block);
+
+            }
+            for (int i = 0; i < dbBlocks.Count; i++)
+            {
+                var block = dbBlocks[i];
+                db.HadithBlocks.Add(block);
+            }
+
+           // db.SaveChanges();
+            watch.Stop();
+            return Ok("Done in:"+ watch.ElapsedMilliseconds);
+        }
+
+        //Show HadithCollection from Files
+        [HttpGet("show/{filename}/{number}")]
+        public HadithCollection ShowData(int number, string filename)
+        {
+            var filepath = "Json/Hadiths/" + filename;
+            //string fileString = JsonfileReader(filepath);
+
+
+            var hadithObj = ReadJsonObject<HadithCollection>(filepath); //JsonConvert.DeserializeObject<HadithCollection>(fileString);
+            var hadiths = new List<Models.Collections.Hadith>();
+            for (int i = 0; i < 1; i++)
+            {
+                var getnumber = number + i;
+                var hadith = hadithObj.hadiths.hadith[getnumber];
+                hadiths.Add(hadith);
+            }
+            hadithObj.hadiths.hadith = hadiths;
+            return hadithObj;
+        }
+
+        //Convert Xml to Json
+        [HttpGet("convertxml/{name}")]
+        public string convertXmlToJson(string name)
+        {
+            var filepath = "Json/Hadiths/xml/" + name;
+            string xml = Readfile(filepath);
+
+            XmlDocument doc = new XmlDocument();
+            doc.LoadXml(xml);
+
+            string json = JsonConvert.SerializeXmlNode(doc);
+
+            return json;
+        }
+
+        [HttpGet("tag")]
+        public ActionResult TagGet()
+        {
+            var queryable = db.HadithBlocks.Select(
+                    block => new HadithBlocks()
+                    {
+                        content = block.content,
+                        id = block.id,
+                        Refrences = block.Refrences,
+                        sources = block.sources,
+                        src = block.src,
+                        number = block.number
+                    }
+                );
+            var model= queryable.Where(x => x.src == 2)
+                .SelectMany( x=> x.Refrences)
+                .Where(x => x.name == "Reference")
+                //.OrderBy(o=> o.Refrences.First(x=> x.name== "Reference").value4  )
+                //.ThenBy(o=> o.Refrences.First(x=> x.name== "Reference").tag1 )
+                .ToList()
+                ;
+            var tags = new List< string > ();
+            for (int i = 0; i < model.Count; i++)
+            {
+                var refes = model.Where(x => x.value4 == i).ToList(); ;
+                var holdnum = 0;
+                string holdTags = "";
+                for (int i2 = 0; i2 < refes.Count; i2++)
+                {
+                    var refe = refes[i2];
+                    var tagnum = refe.value4;
+
+                    if(holdnum != tagnum)
+                    {
+                        holdnum = tagnum;
+
+                    }
+                    holdTags = holdTags +  refe.tag1;
+                }
+
+                //cinstructring string
+                var tag = "" + holdnum + ":" + ReverseString(holdTags) ;
+                if (!isNullOr0(refes.Count))
+                    tags.Add(tag);
+            }
+            return Ok(""+StringfyObject(tags));
+        }
+        public static string ReverseString(string s)
+        {
+            char[] arr = s.ToCharArray();
+            Array.Reverse(arr);
+            return new string(arr);
+        }
+
+        */
+
+        //============= Helper Method ==============
+        public bool equaltag(string rg, string val)
+        {
+            string pattern = @"(\d+[a-z])|(\d+)";
+            var re = Regex.Matches(rg, pattern);
+            foreach (var item in re)
+            {
+                if (item.ToString() == val)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // Numbers[ Vol? , Book?, Hadith?]
+        // Method [ 1=hadith, 2= book hadith, 3= vol book hadith 4=????? ]
+        public async Task<HadithBlocks> SearchHadiths(IQueryable<HadithBlocks> queryable, /* int src , int Method , int[] Numbers , string[] Values ,*/ IncomingRequest request)
+        {
+            HadithBlocks model = new HadithBlocks();
+            if(request.src == 1)
+            switch (request.Method)
+            {
+                case 1:
+                    {
+                        model = await queryable.FirstOrDefaultAsync(
+                            b =>
+                                b.src == request.src
+                                &&
+                                b.Refrences.Any(
+                                    refr =>
+                                        refr.name == "DarusSalam" &&
+                                        refr.value1 == request.value1
+                                    )
+                        );
+                    }
+                    break;
+                case 2:
+                    {
+                        model = await queryable.FirstOrDefaultAsync(
+                            b =>
+                                b.src == request.src
+                                &&
+                                b.Refrences.Any(
+                                    refr =>
+                                        refr.name == "In-Book" &&
+                                        refr.value1 == request.value1 &&
+                                        refr.value2 == request.value2
+                                    )
+                        );
+                    }
+                    break;
+                case 3:
+                    {
+                        model = await queryable.FirstOrDefaultAsync(
+                            b =>
+                                b.src == request.src
+                                &&
+                                b.Refrences.Any(
+                                    refr =>
+                                        refr.name == "USC-MSA" &&
+                                        //refr.value1 == request.value1 &&
+                                        refr.value2 == request.value2 &&
+                                        refr.value3 == request.value3
+                                    )
+                        );
+                    }
+                    break;
+                case 4:
+                    {
+                        model = await queryable.FirstOrDefaultAsync(
+                            b =>
+                                b.src == request.src
+                                &&
+                                b.Refrences.Any(
+                                    refr =>
+                                        refr.Refrencetype == request.Refrencetype &&
+                                        refr.value4 == request.value4 &&
+                                        refr.tag1 == request.tag1
+                                    )
+                        );
+                    }
+                    break;
+
+                default:
+                    break;
+            }
+
+            if (request.src == 2)
+                switch (request.Method)
+                {
+                    case 2:
+                        {
+                            model = await queryable.FirstOrDefaultAsync(
+                                b =>
+                                    b.src == request.src
+                                    &&
+                                    b.Refrences.Any(
+                                        refr =>
+                                            refr.name== "In-Book" &&
+                                            refr.value1 == request.value1 &&
+                                            refr.value2 == request.value2
+                                        )
+                            );
+                        }
+                        break;
+                    case 3:
+                        {
+                            model = await queryable.FirstOrDefaultAsync(
+                                b =>
+                                    b.src == request.src
+                                    &&
+                                    b.Refrences.Any(
+                                        refr =>
+                                            refr.name == "USC-MSA" &&
+                                            refr.value1 == request.value2 &&
+                                            refr.value2 == request.value3 
+                                        )
+                            );
+                        }
+                        break;
+                    case 4:
+                        {
+                            model = await queryable.FirstOrDefaultAsync(
+                                b =>
+                                    b.src == request.src
+                                    &&
+                                    b.Refrences.Any(
+                                        refr =>
+                                            refr.Refrencetype == "muslim tag" &&
+                                            refr.value4 == request.value4 &&
+                                            refr.tag1 == request.tag1
+                                        )
+                            );
+                        }
+                        break;
 
                     default:
                         break;
                 }
-                if(Break) break;
-            }
 
-            return hadith;
+            return model;
         }
 
-        public int stringToInt(string str)
+        public async Task<HadithBlocks> SearchHadithsList(List<HadithBlocks> List, /* int src , int Method , int[] Numbers , string[] Values ,*/ IncomingRequest request)
+        {
+            HadithBlocks model = new HadithBlocks();
+            if (request.src == 1)
+                switch (request.Method)
+                {
+                    case 1:
+                        {
+                            model =  List.FirstOrDefault(
+                                b =>
+                                    b.src == request.src
+                                    &&
+                                    b.Refrences.Any(
+                                        refr =>
+                                            refr.name == "DarusSalam" &&
+                                            refr.value1 == request.value1
+                                        )
+                            );
+                        }
+                        break;
+                    case 2:
+                        {
+                            model = List.FirstOrDefault(
+                                b =>
+                                    b.src == request.src
+                                    &&
+                                    b.Refrences.Any(
+                                        refr =>
+                                            refr.name == "In-Book" &&
+                                            refr.value1 == request.value1 &&
+                                            refr.value2 == request.value2
+                                        )
+                            );
+                        }
+                        break;
+                    case 3:
+                        {
+                            model = List.FirstOrDefault(
+                                b =>
+                                    b.src == request.src
+                                    &&
+                                    b.Refrences.Any(
+                                        refr =>
+                                            refr.name == "USC-MSA" &&
+                                            //refr.value1 == request.value1 &&
+                                            refr.value2 == request.value2 &&
+                                            refr.value3 == request.value3
+                                        )
+                            );
+                        }
+                        break;
+                    case 4:
+                        {
+                            model = List.FirstOrDefault(
+                                b =>
+                                    b.src == request.src
+                                    &&
+                                    b.Refrences.Any(
+                                        refr =>
+                                            refr.Refrencetype == request.Refrencetype &&
+                                            refr.value4 == request.value4 &&
+                                            refr.tag1 == request.tag1
+                                        )
+                            );
+                        }
+                        break;
+
+                    default:
+                        break;
+                }
+
+            if (request.src == 2)
+                switch (request.Method)
+                {
+                    case 2:
+                        {
+                            model = List.FirstOrDefault(
+                                b =>
+                                    b.src == request.src
+                                    &&
+                                    b.Refrences.Any(
+                                        refr =>
+                                            refr.name == "In-Book" &&
+                                            refr.value1 == request.value1 &&
+                                            refr.value2 == request.value2
+                                        )
+                            );
+                        }
+                        break;
+                    case 3:
+                        {
+                            model = List.FirstOrDefault(
+                                b =>
+                                    b.src == request.src
+                                    &&
+                                    b.Refrences.Any(
+                                        refr =>
+                                            refr.name == "USC-MSA" &&
+                                            refr.value1 == request.value2 &&
+                                            refr.value2 == request.value3
+                                        )
+                            );
+                        }
+                        break;
+                    case 4:
+                        {
+                            model = List.FirstOrDefault(
+                                b =>
+                                    b.src == request.src
+                                    &&
+                                    b.Refrences.Any(
+                                        refr =>
+                                            refr.Refrencetype == "muslim tag" &&
+                                            refr.value4 == request.value4 &&
+                                            refr.tag1 == request.tag1
+                                        )
+                            );
+                        }
+                        break;
+
+                    default:
+                        break;
+                }
+
+            return model;
+        }
+
+
+
+
+        ///             ==================================================================================================
+        /// ================================================= General Helper Methods =================================================///
+        ///             ==================================================================================================
+
+
+        public string Readfile(string fileName)
+        {
+            using (StreamReader r = new StreamReader(fileName))
+            {
+                return r.ReadToEnd();
+            }
+        }
+        public T ReadJsonObject<T>(string FilePath)
+        {
+            using (System.IO.StreamReader r = new System.IO.StreamReader(FilePath))
+            {
+                var fileString = r.ReadToEnd();
+                var Object = Newtonsoft.Json.JsonConvert.DeserializeObject<T>(fileString);
+                return Object;
+            }
+        }
+        public int StringToInt(string str)
         {
             int x = 0;
             if (str == null)
@@ -468,70 +983,7 @@ namespace IslamicSearch.Controllers
 
             return x;
         }
-
-        // To convert the Extracted from the browser to Model
-        public HadithModel otherConvertHadithObject(JHadithObject obj)
-        {
-            var model = new HadithModel();
-            model.in_book_refrence = new Models.In_Book_Refrence();
-            model.old_refrence = new Models.Old_refrence();
-            model.arabicHTML = obj.arabicHTML;
-            model.arabicText = obj.arabicText;
-            model.englishHTML = obj.englishHTML;
-            model.englishText = obj.englishText;
-            model.id = obj.id;
-
-
-            model.number = stringToInt(obj.number);
-
-            model.in_book_refrence.book = stringToInt(obj.in_book_refrence.book);
-            model.in_book_refrence.hadith = stringToInt(obj.in_book_refrence.hadith);
-
-            model.old_refrence.vol =   stringToInt(obj.old_refrence.vol);
-            model.old_refrence.book = stringToInt(obj.old_refrence.book);
-            model.old_refrence.hadith = stringToInt(obj.old_refrence.hadith);
-
-
-            return model;
-        }
-
-        public string JsonfileReader(string fileName)
-        {
-            using (StreamReader r = new StreamReader(fileName))
-            {
-                return r.ReadToEnd();
-            }
-        }
-
-        //Special converter for muslim ketab
-        // To convert the Extracted from the browser to Model
-        public HadithModel MuslimConvertHadithObject(JMuslimHadithObject obj)
-        {
-            var model = new HadithModel();
-            model.in_book_refrence = new Models.In_Book_Refrence();
-            model.old_refrence = new Models.Old_refrence();
-            model.arabicHTML = obj.arabicHTML;
-            model.arabicText = obj.arabicText;
-            model.englishHTML = obj.englishHTML;
-            model.englishText = obj.englishText;
-            model.id = obj.id;
-
-
-            model.number = stringToInt(""+obj.number);
-
-            model.in_book_refrence.book = obj.mini_new_refrence.book;
-            model.in_book_refrence.hadith = stringToInt(obj.mini_new_refrence.hadith);
-            model.in_book_refrence.tag = obj.in_book_refrence;
-
-            model.old_refrence.vol =  muslimVol(stringToInt(obj.old_refrence.book)) ;
-            model.old_refrence.book = stringToInt(obj.old_refrence.book);
-            model.old_refrence.hadith = stringToInt(obj.old_refrence.hadith);
-
-
-            return model;
-        }
-
-        private bool isNull<T>(T Object)
+        public bool isNull<T>(T Object)
         {
             if (Object == null)
             {
@@ -539,170 +991,32 @@ namespace IslamicSearch.Controllers
             }
             return false;
         }
-
-        private bool isNullOr0<T>(T Object)
+        public bool isNullOr0<T>(T Object)
         {
 
-            if (Object == null || Object.Equals(0) )
+            if (Object == null || Object.Equals(0))
             {
                 return true;
             }
             return false;
         }
-
-        public bool equaltag(string rg,string val)
+        public string StringfyObject<T>(T Object)
         {
-            //string pattern = @"(\d+[a-z])";
-            string pattern = @"(\d+[a-z])|(\d+)";
-            var re = Regex.Matches(rg, pattern);
-            foreach (var item in re)
-            {
-                if (item.ToString() == val)
-                {
-                    return true;
-                }
-            }
-            return false;
+            return Newtonsoft.Json.JsonConvert.SerializeObject(Object);
         }
+
     }//Class
 
-    internal class RestRequest
+    public class HadithIndex
     {
-        private object gET;
-
-        public RestRequest(object gET)
-        {
-            this.gET = gET;
-        }
-    }
-
-    public class InBookRefrence
-    {
-        public string book { get; set; }
-        public string hadith { get; set; }
-    }
-
-    public class OldRefrence
-    {
-        public string vol { get; set; } = "0";
-        public string book { get; set; }
-        public string hadith { get; set; }
+        public int c { get; set; }
+        public int fh { get; set; }
+        public int lh { get; set; }
 
     }
-
-    //Extracted hadith Object Class
-    public class JHadithObject
-    {
-        public int id { get; set; }
-        public string number { get; set; }
-        public InBookRefrence in_book_refrence { get; set; }
-        public OldRefrence old_refrence { get; set; }
-        public string arabicText { get; set; }
-        public string arabicHTML { get; set; }
-        public string englishText { get; set; }
-        public string englishHTML { get; set; }
-
-    }
-
-    //Special case for muslim ketab
-
-    public class MiniNewRefrence
-    {
-        public int book { get; set; }
-        public string hadith { get; set; }
-    }
-    public class JMuslimHadithObject
-    {
-        public int id { get; set; }
-        public string number { get; set; }
-        public string in_book_refrence { get; set; }
-        public MiniNewRefrence mini_new_refrence { get; set; }
-        public OldRefrence old_refrence { get; set; }
-        public string arabicText { get; set; }
-        public string arabicHTML { get; set; }
-        public string englishText { get; set; }
-        public string englishHTML { get; set; }
-    }
-
-
-
-    public class SelectClass
-    {
-        public int id { get; set; }
-        public int number { get; set; } = 0;
-        public string arabicHTML { get; set; }
-        public string arabicText { get; set; }
-        public string englishHTML { get; set; }
-        public string englishText { get; set; }
-        public In_Book_Refrence in_book_refrence { get; set; }
-        public Old_refrence old_refrence { get; set; }
-    }
-
-    public class tagindex
-    {
-        public string tag { get; set; }
-    }
-
-    public class bnewIndex
-    {
-        public int nh { get; set; }
-        public int nc { get; set; }
-    }
-    public class boldIndex
-    {
-        public int oh { get; set; }
-        public int oc { get; set; }
-    }
-    public class bukhariindex
-    {
-        public List<bnewIndex> bnew { get; set; }
-        public List<boldIndex> bold { get; set; }
-    }
-    public class muslimindex
-    {
-        public int nh { get; set; }
-        public int nc { get; set; }
-        public int oh { get; set; }
-        public int oc { get; set; }
-    }
-
-}//Namespace
-
-/*
-            //Validations
-            if (!ModelState.IsValid) { return BadRequest(ModelState); }//validate
-            if (grocery.Name == "") { return Content("No Name"); }//validate
-            if (grocery == null) { return NotFound(); }//validate
-
-
-            if (req == "add")
-            {
-                //--------------add logic-------------//
-                //PostValidation
-                if (GroceryExistsName(grocery.Name)) { return Ok("name already exists"); }//validate
-
-                grocery.MoreInformations = UpdateInformationsAdd(grocery.MoreInformations);
-
-db.Grocery.Add(grocery);
-                await db.SaveChangesAsync();
-
-                return Ok("Added");
-            }
-*/
-
-/*
-List<HadithModel> model = new List<HadithModel>();
-
-//Read File
-var fileName = "Json/.Bukhari.modelJson";
-var fileString = JsonfileReader(fileName);
-var hadithObj = JsonConvert.DeserializeObject<List<JMuslimHadithObject>>(fileString);
-
-//convert json to hadith
-for (int i2 = 0; i2 < hadithObj.Count; i2++)
-{
-var row = MuslimConvertHadithObject(hadithObj[i2]);
-model.Add(row);
-
 }
+/*
+var watch = System.Diagnostics.Stopwatch.StartNew();
+watch.Stop();
+watch.ElapsedMilliseconds;
 */

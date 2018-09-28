@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Xml.Serialization;
 
 namespace IslamicSearch.Models
 {
@@ -79,9 +80,9 @@ namespace IslamicSearch.Models
     public class NasaiOld_refrence
     {
         public int id { get; set; }
-        public int? vol { get; set; } = 0;
-        public int? book { get; set; } = 0;
-        public int? hadith { get; set; } = 0;
+        public int vol { get; set; } = 0;
+        public int book { get; set; } = 0;
+        public int hadith { get; set; } = 0;
     }
 
     public class NasaiIn_Book_Refrence

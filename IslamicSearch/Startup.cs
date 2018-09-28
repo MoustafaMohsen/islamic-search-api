@@ -28,7 +28,7 @@ namespace IslamicSearch
         {
             // Sqlite
             services.AddDbContext<AppDbContext>(option=>option.UseSqlite( Configuration.GetConnectionString("SqliteConnection") ) );
-
+            services.AddHttpClient();
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
         }
 
