@@ -2,6 +2,23 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp2.1</TargetFramework>
+    <Version>2.0.0</Version>
+    <Authors>Moustafa Mohsen</Authors>
+    <Company>Moustafa Mohsen</Company>
+    <Description>Search any references or sources from different books, one place that connects all the different book references
+
+The Islamic search API
+Front-end repo:https://github.com/MoustafaMohsen/islamic-search
+Demo:https://github.com/MoustafaMohsen/islamic-search</Description>
+    <Copyright>MoustafaMohsen©2019</Copyright>
+    <PackageLicenseUrl>https://github.com/MoustafaMohsen/CoreUserIdentity/blob/master/islamic-search-api/LICENSE</PackageLicenseUrl>
+    <PackageProjectUrl>https://github.com/MoustafaMohsen/islamic-search</PackageProjectUrl>
+    <PackageIconUrl>https://github.com/MoustafaMohsen/CoreUserIdentity/blob/master/islamic-search-api/icon.ico</PackageIconUrl>
+    <RepositoryUrl>https://github.com/MoustafaMohsen/islamic-search-api.git</RepositoryUrl>
+    <PackageTags>Islamic Search IslamicSearch Bukhari Muslim Quran</PackageTags>
+    <PackageReleaseNotes>-admin api
+- json lookup api
+- cleaner code</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
