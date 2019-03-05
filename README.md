@@ -1,10 +1,10 @@
 # Islamic Search API
 
-Project Url [Here](https://moustafamohsen.github.io/islame-search/)
+Project Url [Here](https://moustafamohsen.github.io/islamic-search/)
 
 Search any references or sources from different books, one place that connects all the different book references
 
-This it just the back end, check  [**the project's front end**](https://github.com/MoustafaMohsen/islame-search).
+This it just the back end, check  [**the project's front end**](https://github.com/MoustafaMohsen/islamic-search).
 
 ## Getting Started
 
@@ -20,7 +20,7 @@ These instructions will get you a copy of the project up and running on your loc
 Create folder for and  clone the project
 
 ```sh
-$ git clone https://github.com/MoustafaMohsen/islame-search.git
+$ git clone https://github.com/MoustafaMohsen/islamic-search.git
 ```
 now setup the the project settings with appsettings.json file as you like
 then navigate to the folder containing the .csproj file run the project
