@@ -272,3 +272,7 @@ AppSettings/
 */Json/
 Backup/
 !*/islameSearch.db
+
+# clean repo
+*bfg*.jar
+replacment.default.txt
