@@ -28,6 +28,7 @@ Demo:https://github.com/MoustafaMohsen/islamic-search</Description>
 
   <ItemGroup>
     <Folder Include="wwwroot\" />
+    <None Include="islameSearch.db" CopyToPublishDirectory="Always" />
   </ItemGroup>
 
   <ItemGroup>

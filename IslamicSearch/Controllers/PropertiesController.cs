@@ -77,7 +77,7 @@ namespace IslamicSearch.Controllers
 
 
         [HttpGet("Db/")]
-        public async Task<ActionResult<HadithBlocks>> GetDb([FromQuery]string filePath,[FromQuery]string pass = "worng")
+        public async Task<ActionResult<HadithBlocks>> GetDb([FromQuery]string filePath, [FromQuery]string rootpath = "./", [FromQuery]string pass = "worng")
         {
             /**
             if (pass != AdminPassword)
@@ -87,17 +87,17 @@ namespace IslamicSearch.Controllers
             */
 
 
-            var directoryInfo = new DirectoryInfo("./");
+            var directoryInfo = new DirectoryInfo(rootpath);
 
             var directories = directoryInfo.FullName;
 
             var files = Files(directories);
 
-            var content = getcontent("./");
+            var folders = Directories(directories);
 
             return Ok(new {
-                content,
-                files
+                files,
+                folders
             });
         }
 
