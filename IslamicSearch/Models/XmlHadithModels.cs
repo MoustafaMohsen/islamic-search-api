@@ -127,6 +127,7 @@ namespace IslamicSearch.Models.Lib3
         public int src { get; set; }
         public int Method { get; set; }
         public string Refrencetype { get; set; } = "";
+        public string name { get; set; } = "";
         public int value1 { get; set; } = 0;
         public int value2 { get; set; } = 0;
         public int value3 { get; set; } = 0;

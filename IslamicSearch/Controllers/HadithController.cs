@@ -131,6 +131,51 @@ namespace IslamicSearch.Controllers
             return Ok(list);
         }
 
+        [HttpPost("requestblocks/")]
+        public ActionResult<HadithBlocks> GetManyByAccurateRequest([FromBody] IncomingRequest request)
+        {
+            var queryable = db.HadithBlocks.Select(
+                    block => new HadithBlocks()
+                    {
+                        content = block.content,
+                        id = block.id,
+                        Refrences = block.Refrences,
+                        sources = block.sources,
+                        src = block.src,
+                        number = block.number
+                    }
+                );
+            List<HadithBlocks> list = new List<HadithBlocks>();
+            if (request.Method == 6)
+            {
+
+                list = queryable.Where(
+                                b =>
+                                    b.src == request.src
+                                    &&
+                                    b.Refrences.Any(
+                                        refr =>
+                                            refr.Refrencetype == request.Refrencetype &&
+                                            refr.name == request.name &&
+                                            refr.value1 == request.value1 &&
+                                            refr.value2 == request.value2 &&
+                                            refr.value3 == request.value3 &&
+                                            refr.value4 == request.value4 &&
+                                            refr.tag1 == request.tag1&&
+                                            refr.tag2 == request.tag2
+                                        )
+                            )
+                            .OrderBy(o => o.number)
+                            .ToList()
+                ;
+            }
+
+            if (isNullOr0(list) || isNullOr0(list.Count))
+                return NotFound();
+
+            return Ok(list);
+        }
+
 
         //===================Using Json only================
         [HttpGet("id/json/{src}/{id}")]
@@ -269,6 +314,93 @@ namespace IslamicSearch.Controllers
 
             return Ok(model);
         }
+
+        [HttpGet("uploadjson")]
+        public IActionResult uploadjson()
+        {
+            var filePath = "Json/refrences/BukhariHadiths_Blocks_withFulRefrences.json";
+            var NewBlocks = ReadJsonObject< List<HadithBlocks> >(filePath);
+            var Blocksdb = db.HadithBlocks.Select(
+                    block => new HadithBlocks()
+                    {
+                        content = block.content,
+                        //id = block.id,
+                        Refrences = block.Refrences,
+                        sources = block.sources,
+                        src = block.src,
+                        number = block.number
+                    }
+                ).Where(x => x.src == 1).ToList();
+            for (int i = 0; i < NewBlocks.Count; i++)
+            {
+                var block = NewBlocks[i];
+                var list1 = new List<Refrence>();
+                for (int i2 = 0; i2 < block.Refrences.Count; i2++)
+                {
+                    var refre = block.Refrences[i2];
+                    refre.id = 0;
+                    list1.Add(refre);
+                }
+                NewBlocks[i].Refrences = list1;
+
+                var list2 = new List<Value>();
+                for (int i2 = 0; i2 < block.sources.Count; i2++)
+                {
+                    var refre1 = block.sources[i2];
+                    refre1.id = 0;
+                    list2.Add(refre1);
+                }
+                NewBlocks[i].sources = list2;
+
+                var list3 = new List<Value>();
+                for (int i2 = 0; i2 < block.content.Count; i2++)
+                {
+                    var refre = block.content[i2];
+                    refre.id = 0;
+                    list3.Add(refre);
+                }
+                NewBlocks[i].content = list3;
+            }
+            db.HadithBlocks.AddRange(NewBlocks);
+
+            db.SaveChanges();
+            return Ok("Uploaded");
+
+        }
+
+        [HttpGet("DownloadRefs")]
+        public async Task<ActionResult<HadithBlocks>> DownloadDbrefs()
+        {
+            var queryable = db.HadithBlocks.Select(
+                    block => new HadithBlocks()
+                    {
+                        content = block.content,
+                        id = block.id,
+                        Refrences = block.Refrences,
+                        sources = block.sources,
+                        src = block.src,
+                        number = block.number
+                    }
+                );
+
+            var model = queryable.Where(x=>x.src==1).ToList();
+            /*
+            var DarsalameOnly = model.Where(x => x.name == "DarusSalam").ToList();
+            for (int i = 0; i < DarsalameOnly.Count; i++)
+            {
+                var dar = DarsalameOnly[i].value1;
+                var duplicates = DarsalameOnly.Where(x => x.value1 == dar).ToList();
+                if (duplicates.Count > 1 )
+                {
+                    var top = 0;
+                }
+            }
+            */
+
+
+            return Ok(model);
+        }
+
         [HttpGet("getadresses/{src}")]
         public string GetAdress(int src)
         {
@@ -331,6 +463,48 @@ namespace IslamicSearch.Controllers
             }
             
             return StringfyObject(new { newList,oldList });
+        }
+
+        [HttpGet("uprf")]
+        public IActionResult UploadRefrences()
+        {
+            var filePath = "Json/refrences/BukhariHadiths_Blocks_withFulRefrences.json";
+            var refrencesArray = ReadJsonObject< List< List<Refrence> > >(filePath);
+
+            //ReplaceRefrences
+            var queryable = db.HadithBlocks.Select(
+                block => new HadithBlocks()
+                {
+                    content = block.content,
+                    id = block.id,
+                    Refrences = block.Refrences,
+                    sources = block.sources,
+                    src = block.src,
+                    number = block.number
+                }
+            );
+            var Bukharis = queryable.Where(x => x.src == 1).ToList();
+
+            for (int i = 0; i < Bukharis.Count; i++)
+            {
+                var block = Bukharis[i];
+
+                var blockDar= block.Refrences.FirstOrDefault(x => x.name == "DarusSalam");
+                var blockInbook = block.Refrences.FirstOrDefault(x => x.name == "In-Book");
+
+                var NewRefs=refrencesArray.Where( x => 
+                x.Exists(y => y.name == blockDar.name&&y.value1== blockDar.value1)
+                //&&x.Exists(y => y.name == blockInbook.name && y.value1 == blockInbook.value1 && y.value2 == blockInbook.value2)
+                )
+                .ToList();
+
+                if (NewRefs==null|| NewRefs.Count<1)
+                {
+                    var stop=0;
+                }
+            }
+
+            return Ok(refrencesArray.Count);
         }
 
         /*
@@ -946,7 +1120,78 @@ namespace IslamicSearch.Controllers
         }
 
 
+        public List< List<Refrence> >  EditAndAddRefrencesBukhari(List< List< Refrence> > refrencesArray)
+        {
+            for (int i = 0; i < refrencesArray.Count; i++)
+            {
+                var refrence = refrencesArray[i];
+                int Naser = -1;
+                int dar = 0;
+                for (int i2 = 0; i2 < refrence.Count; i2++)
+                {
+                    var refe = refrence[i2];
+                    if (refe.name == "Number-Naser")
+                    {
+                        Naser = refe.value1;
+                    }
+                    if (refe.name == "DarusSalam")
+                    {
+                        dar = refe.value1;
+                    }
+                    if (refe.value1 == -1)
+                    {
+                        refrence[i2].value1 = -2;
+                    }
+                    if (refe.value2 == -1)
+                    {
+                        refrence[i2].value2 = -2;
+                    }
+                    if (refe.value3 == -1)
+                    {
+                        refrence[i2].value3 = -2;
+                    }
+                    if (refe.value3 == -1)
+                    {
+                        refrence[i2].value3 = -2;
+                    }
+                    if (refe.value4 == -1)
+                    {
+                        refrence[i2].value4 = -2;
+                    }
 
+                }//for
+                //Replace Naser with DarSalam
+                if (dar != Naser)
+                {
+
+                    var Daruslam = refrence.Where(x => x.name == "DarusSalam").ToList();
+                    var NaserNumberList = refrence.Where(x => x.name == "Number-Naser").ToList();
+                    //Stop is invalid (probably will never stop)
+                    if (Daruslam.Count > 1 || NaserNumberList.Count > 1)
+                    {
+                        var Stop1 = 0;
+
+                    }
+
+                    var NaserNumber = NaserNumberList[0];
+                    refrence.Remove(NaserNumber);
+
+                    //edit the NaserNumber to Darusalam
+                    var refDar = NaserNumber;
+                    refDar.name = "DarusSalam";
+                    refrence.Add(refDar);
+
+                }
+                else
+                {
+                    var NaserNumberList = refrence.Where(x => x.name == "Number-Naser").ToList();
+                    var NaserNumber = NaserNumberList[0];
+                    refrence.Remove(NaserNumber);
+                }
+                refrencesArray[i] = refrence;
+            }//for
+            return refrencesArray;
+        }
 
         ///             ==================================================================================================
         /// ================================================= General Helper Methods =================================================///

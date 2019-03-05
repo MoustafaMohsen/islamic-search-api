@@ -268,3 +268,6 @@ AppSettings/
 *.db
 *.ps1
 #test
+
+*/Json/
+Backup/
