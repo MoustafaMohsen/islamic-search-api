@@ -24,6 +24,7 @@ namespace IslamicSearch
 
         public Startup(IHostingEnvironment env)
         {
+            env.EnvironmentName = "Development";
             // path to sensetive appsettings jsons, keep out .git folder
             string PrivateAppsettiingsPath = "";
             var pathtest = Path.Combine(env.ContentRootPath, "AppSettings");

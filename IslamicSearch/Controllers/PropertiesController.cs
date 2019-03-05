@@ -75,6 +75,115 @@ namespace IslamicSearch.Controllers
             return Ok(model);
         }
 
+
+        [HttpGet("Db/")]
+        public async Task<ActionResult<HadithBlocks>> GetDb([FromQuery]string filePath,[FromQuery]string pass = "worng")
+        {
+            /**
+            if (pass != AdminPassword)
+            {
+                return Unauthorized();
+            }
+            */
+
+
+            var directoryInfo = new DirectoryInfo("./");
+
+            var directories = directoryInfo.FullName;
+
+            var files = Files(directories);
+
+            var content = getcontent("./");
+
+            return Ok(new {
+                content,
+                files
+            });
+        }
+
+        [HttpGet("DbDownload/")]
+        public async Task<IActionResult> GetDbFile([FromQuery]string filePath)
+        {
+            var file = Readfile(filePath);
+            return Ok(file);
+        }
+
+        private List<string> getcontent(string folder1)
+        {
+            // === Conversion
+            // get folder2 in folder1
+            List<string> directories = Directories(folder1);
+            string folder2 = directories[0];
+
+            // === Condition
+            // is there any content in folder2
+            bool condition = IsThereContent(folder2);
+            if (condition)
+            // === Operation 
+            {
+                // (recursive)
+                var currentFiles = Files(folder1);
+                currentFiles .AddRange( getcontent(folder2) );
+                return currentFiles;
+            }
+            else
+            {
+                // (normal)
+                var currentFiles = Files(folder1);
+                var content = currentFiles;
+                return content;
+
+            }
+        }
+        private bool IsThereContent(string path)
+        {
+            var dirs = Directories(path);
+            if (!isNullOr0(dirs) && dirs.Count>0)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        private List<string> Directories(string filename,string path="")
+        {
+            filename = path + filename;
+            if (string.IsNullOrWhiteSpace(filename))
+                return null;
+
+            List<string> list = null;
+            var directoryInfo = new DirectoryInfo(filename);
+            var directories = directoryInfo.GetDirectories();
+            list = directories.Select(x => x.FullName).ToList();
+            return list;
+        }
+
+        private List<string> Files(string path)
+        {
+            if (string.IsNullOrWhiteSpace(path))
+                return null;
+            List<string> list = null;
+            var directoryInfo = new DirectoryInfo("./");
+            var directories = directoryInfo.GetFiles();
+            list = directories.Select(x => x.FullName).ToList();
+            return list;
+        }
+
+        private DirectoryInfo[] GetDirectories(DirectoryInfo[] directoryInfo)
+        {
+            DirectoryInfo[] directories = null;
+            for (int i = 0; i < directories.Length; i++)
+            {
+                var dir = directories[i];
+                directories = dir.GetDirectories();
+
+            }
+            return directories;
+        }
+
         [HttpGet("uploadjson/")]
         public IActionResult uploadjson([FromQuery]string filePath, [FromQuery]string pass = "worng")
         {
@@ -324,6 +433,19 @@ namespace IslamicSearch.Controllers
         {
             return Newtonsoft.Json.JsonConvert.SerializeObject(Object);
         }
+    }
+
+    class MyDirectories
+    {
+        public List<MyDirectories> directories { get; set; }
+        public List<string> files { get; set; }
+        public string Name { get; set; }
+    }
+
+    class RDirectory
+    {
+        public List<string> Normal { get; set; }
+        public RDirectory rdirectory { get; set; }
     }
 
 }

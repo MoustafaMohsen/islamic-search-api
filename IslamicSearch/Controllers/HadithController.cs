@@ -17,8 +17,6 @@ using IslamicSearch.Models.Lib3;
 using IslamicSearch.Services;
 
 
-// For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-
 namespace IslamicSearch.Controllers
 {
     [Route("api/[controller]/")]
