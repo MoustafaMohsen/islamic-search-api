@@ -79,12 +79,12 @@ namespace IslamicSearch.Controllers
         [HttpGet("Db/")]
         public async Task<ActionResult<HadithBlocks>> GetDb([FromQuery]string filePath, [FromQuery]string rootpath = "./", [FromQuery]string pass = "worng")
         {
-            /**
+            
             if (pass != AdminPassword)
             {
                 return Unauthorized();
             }
-            */
+            
 
 
             var directoryInfo = new DirectoryInfo(rootpath);
@@ -102,8 +102,12 @@ namespace IslamicSearch.Controllers
         }
 
         [HttpGet("DbDownload/")]
-        public async Task<IActionResult> GetDbFile([FromQuery]string filePath)
+        public async Task<IActionResult> GetDbFile([FromQuery]string filePath, [FromQuery]string pass = "worng")
         {
+            if (pass != AdminPassword)
+            {
+                return Unauthorized();
+            }
             var file = Readfile(filePath);
             return Ok(file);
         }
