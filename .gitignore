@@ -259,3 +259,12 @@ paket-files/
 # Python Tools for Visual Studio (PTVS)
 __pycache__/
 *.pyc
+
+#===========MyIgnores
+#ignore appsettings
+/*/[Dd]ata.txt
+*backup*.db
+AppSettings/
+*.db
+*.ps1
+#test
